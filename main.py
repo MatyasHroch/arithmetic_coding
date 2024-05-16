@@ -40,11 +40,17 @@ def write_bit(bit: int, output):
         cx = 0
 
 
-def recalc_ranges_and_write(low: int, upper: int, output: list[int], data_size: int):
-    low_bin = to_binary(low, data_size)
-    upper_bin = to_binary(upper, data_size)
+def recalc_ranges_and_write(
+    low: int, upper: int, output: list[int], data_size: int, m: int
+):
+    low_bin = to_binary(low, m)
+    upper_bin = to_binary(upper, m)
 
     while True:
+
+        print(f"Low: {low_bin}")
+        print(f"Upper: {upper_bin}")
+
         if low_bin[0] == upper_bin[0]:
             print(f"Equal Case, both bits are {low_bin[0]}")
             write_bit(low_bin[0], output)
@@ -69,10 +75,9 @@ def recalc_ranges_and_write(low: int, upper: int, output: list[int], data_size: 
 
 
 def new_ranges(
-    symbol: str, frequency: dict[str, int], low, upper, data_size: int
+    symbol: str, frequency: dict[str, int], low, upper, data_size: int, m: int
 ) -> tuple[int, int]:
     interval_size = upper - low + 1
-    print(f"interval_size: {interval_size}")
 
     part = interval_size // data_size
     print(f"Part: {part}")
@@ -83,7 +88,7 @@ def new_ranges(
             break
         frequency_sum += frequency[key]
 
-    print(f"Frequency sum: {frequency_sum}")
+    # print(f"Frequency sum: {frequency_sum}")
 
     low = low + part * frequency_sum
     upper = low + part * frequency[symbol] - 1
@@ -115,10 +120,9 @@ def encode(data: str):
 
     for symbol in data:
         print(f"\nSymbol: {symbol}")
-        print(f"Low: {low}")
-        print(f"Upper: {upper}")
-        low, upper = new_ranges(symbol, frequency, low, upper, data_size)
-        low, upper = recalc_ranges_and_write(low, upper, encoded_data, data_size)
+        print(f"Range: ( {low} - {upper} )")
+        low, upper = new_ranges(symbol, frequency, low, upper, data_size, m)
+        low, upper = recalc_ranges_and_write(low, upper, encoded_data, data_size, m)
 
     # print(f"Encoded data: {encoded_data}")
     return encoded_data, frequency
@@ -148,12 +152,16 @@ def shift_encoded_data(encoded_data: list[int]) -> list[int]:
 
 
 def recalc_ranges_decoding(
-    low: int, upper: int, encoded_data: list[int], data_size: int
+    low: int, upper: int, encoded_data: list[int], data_size: int, m: int = 0
 ):
-    low_bin = to_binary(low, data_size)
-    upper_bin = to_binary(upper, data_size)
+    low_bin = to_binary(low, m)
+    upper_bin = to_binary(upper, m)
 
     while True:
+
+        print(f"Low: {low_bin}")
+        print(f"Upper: {upper_bin}")
+
         if low_bin[0] == upper_bin[0]:
             print(f"Equal Case, both bits are {low_bin[0]}")
             encoded_data = shift_encoded_data(encoded_data)
@@ -178,14 +186,17 @@ def recalc_ranges_decoding(
 
 
 def decode(encoded_data: list[int], frequency: dict[str, int], data_size: int) -> str:
-    m = math.ceil(math.log2(data_size * 4) + 1)
     low = 0
+    m = math.ceil(math.log2(data_size * 4) + 1)
     upper = pow(2, m) - 1
+
     decoded_data = []
+
+    print("Data size: ", data_size)
 
     i = 0
 
-    while len(decoded_data) < m:
+    while len(decoded_data) < data_size:
         i += 1
         print("\n")
         while len(encoded_data) < m:
@@ -206,6 +217,7 @@ def decode(encoded_data: list[int], frequency: dict[str, int], data_size: int) -
                 break
             cum_value += the_part
 
+        print(f"Int Window: {int_window}")
         print("Decoded symbol: " + symbol)
         print(f"Range: ({low} - {upper}) ")
         print(f"Part: {part}")
@@ -219,7 +231,7 @@ def decode(encoded_data: list[int], frequency: dict[str, int], data_size: int) -
         print(f"New Upper: {upper}")
 
         low, upper, encoded_data = recalc_ranges_decoding(
-            low, upper, encoded_data, data_size
+            low, upper, encoded_data, data_size, m
         )
 
     return decoded_data
@@ -227,7 +239,7 @@ def decode(encoded_data: list[int], frequency: dict[str, int], data_size: int) -
 
 def main():
     global cx
-    word_to_encode = "klokan"
+    word_to_encode = "aab"
     encoded_data, frequency = encode(word_to_encode)
     print("Encoded data:", encoded_data, "\n\n\n")
 
